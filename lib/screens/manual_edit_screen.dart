@@ -10,7 +10,9 @@ class ManualEditScreen extends StatefulWidget {
 }
 
 class _ManualEditScreenState extends State<ManualEditScreen> {
-  int _selectedToolIndex = 0; // Default to 'Crop'
+  int _selectedToolIndex = 0;
+  double _rotation = 0.0;
+  double _scale = 1.0;
 
   final List<Map<String, dynamic>> _tools = [
     {'icon': Icons.crop, 'label': 'CROP'},
@@ -44,7 +46,8 @@ class _ManualEditScreenState extends State<ManualEditScreen> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -82,7 +85,7 @@ class _ManualEditScreenState extends State<ManualEditScreen> {
                     ),
                     child: FractionallySizedBox(
                       alignment: Alignment.centerLeft,
-                      widthFactor: 2/6,
+                      widthFactor: 2 / 6,
                       child: Container(
                         decoration: BoxDecoration(
                           color: Colors.black,
@@ -94,7 +97,7 @@ class _ManualEditScreenState extends State<ManualEditScreen> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
 
             // Title
@@ -146,15 +149,46 @@ class _ManualEditScreenState extends State<ManualEditScreen> {
                   children: [
                     // Grid lines overlay (simulated with Container for style)
                     Positioned.fill(
+                      child: ClipRect(
+                        child: Transform.rotate(
+                          angle: _rotation,
+                          child: Transform.scale(
+                            scale: _scale,
+                            child: Image.network(
+                              'https://images.unsplash.com/photo-1541336032412-2048a678540d?q=80&w=1000&auto=format&fit=crop',
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.broken_image,
+                                        size: 60, color: Colors.black26),
+                                    Text("Image load failed",
+                                        style:
+                                            TextStyle(color: Colors.black38)),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned.fill(
                       child: CustomPaint(
                         painter: GridPainter(),
                       ),
                     ),
                     // Crop corners (simulated)
-                    const Positioned(top: 10, left: 10, child: _CornerWidget(quarterTurns: 0)),
-                    const Positioned(top: 10, right: 10, child: _CornerWidget(quarterTurns: 1)),
-                    // const Positioned(bottom: 10, right: 10, child: _CornerWidget(quarterTurns: 2)), // Hidden by toolbar in design usually, but let's just show top
-                    // const Positioned(bottom: 10, left: 10, child: _CornerWidget(quarterTurns: 3)),
+                    const Positioned(
+                        top: 10,
+                        left: 10,
+                        child: _CornerWidget(quarterTurns: 0)),
+                    const Positioned(
+                        top: 10,
+                        right: 10,
+                        child: _CornerWidget(quarterTurns: 1)),
                   ],
                 ),
               ),
@@ -164,7 +198,8 @@ class _ManualEditScreenState extends State<ManualEditScreen> {
 
             // Bottom Tools & Actions
             Container(
-              padding: const EdgeInsets.only(top: 20, bottom: 30, left: 24, right: 24),
+              padding: const EdgeInsets.only(
+                  top: 20, bottom: 30, left: 24, right: 24),
               decoration: const BoxDecoration(
                 color: Color(0xFFF5F7FA),
               ),
@@ -183,7 +218,7 @@ class _ManualEditScreenState extends State<ManualEditScreen> {
                       );
                     }),
                   ),
-                  
+
                   const SizedBox(height: 32),
 
                   // Continue Button
@@ -192,10 +227,12 @@ class _ManualEditScreenState extends State<ManualEditScreen> {
                     height: 56,
                     child: ElevatedButton(
                       onPressed: () {
-                         Navigator.push(
-                           context,
-                           MaterialPageRoute(builder: (context) => const VoiceAssistantScreen()),
-                         );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  const VoiceAssistantScreen()),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
@@ -217,11 +254,11 @@ class _ManualEditScreenState extends State<ManualEditScreen> {
                   ),
 
                   const SizedBox(height: 16),
-                  
+
                   // Skip Text
                   TextButton(
                     onPressed: () {
-                       // Skip logic
+                      // Skip logic
                     },
                     child: Text(
                       'SKIP EDITS',
@@ -252,6 +289,11 @@ class _ManualEditScreenState extends State<ManualEditScreen> {
       onTap: () {
         setState(() {
           _selectedToolIndex = index;
+          if (label == 'ROTATE') {
+            _rotation += 90 * (3.14159 / 180);
+          } else if (label == 'RESIZE') {
+            _scale = (_scale == 1.0) ? 1.2 : 1.0;
+          }
         });
       },
       child: Column(
@@ -297,13 +339,15 @@ class GridPainter extends CustomPainter {
     // Draw vertical lines
     double stepX = size.width / 4;
     for (int i = 1; i < 4; i++) {
-      canvas.drawLine(Offset(stepX * i, 0), Offset(stepX * i, size.height), paint);
+      canvas.drawLine(
+          Offset(stepX * i, 0), Offset(stepX * i, size.height), paint);
     }
 
     // Draw horizontal lines
     double stepY = size.height / 4;
     for (int i = 1; i < 4; i++) {
-      canvas.drawLine(Offset(0, stepY * i), Offset(size.width, stepY * i), paint);
+      canvas.drawLine(
+          Offset(0, stepY * i), Offset(size.width, stepY * i), paint);
     }
   }
 

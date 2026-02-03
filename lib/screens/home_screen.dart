@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'select_printer_type_screen.dart';
+import 'review_settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -10,7 +11,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,28 +21,29 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         child: SafeArea(
           child: ScrollConfiguration(
-            behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+            behavior:
+                ScrollConfiguration.of(context).copyWith(scrollbars: false),
             child: SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(),
-                  const SizedBox(height: 16),
-                  _buildGreeting(),
-                  const SizedBox(height: 16),
-                  _buildStatsCards(),
-                  const SizedBox(height: 16),
-                  _buildRevenueCard(),
-                  const SizedBox(height: 20),
-                  _buildQuickActions(),
-                  const SizedBox(height: 20),
-                  _buildPrintersSection(),
-                  const SizedBox(height: 100),
-                ],
+                  children: [
+                    _buildHeader(),
+                    const SizedBox(height: 16),
+                    _buildGreeting(),
+                    const SizedBox(height: 16),
+                    _buildStatsCards(),
+                    const SizedBox(height: 16),
+                    _buildRevenueCard(),
+                    const SizedBox(height: 20),
+                    _buildQuickActions(),
+                    const SizedBox(height: 20),
+                    _buildPrintersSection(),
+                    const SizedBox(height: 100),
+                  ],
+                ),
               ),
-            ),
             ),
           ),
         ),
@@ -278,19 +279,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       child: Row(
                         children: [
-                            const Icon(
-                              Icons.arrow_upward,
-                              color: Color(0xFFFFFFFF),
-                              size: 12,
+                          const Icon(
+                            Icons.arrow_upward,
+                            color: Color(0xFFFFFFFF),
+                            size: 12,
+                          ),
+                          Text(
+                            '+12%',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFFFFFFFF),
                             ),
-                            Text(
-                              '+12%',
-                              style: GoogleFonts.inter(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFFFFFFFF),
-                              ),
-                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -358,7 +359,36 @@ class _HomeScreenState extends State<HomeScreen> {
                   const Color(0xFFE0E0E0),
                 ],
               ),
-              onTap: () {},
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    backgroundColor: Colors.white,
+                    title: const Text("Scan QR Code"),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          height: 200,
+                          width: 200,
+                          color: Colors.black12,
+                          child: const Icon(Icons.qr_code_scanner,
+                              size: 80, color: Colors.black54),
+                        ),
+                        const SizedBox(height: 16),
+                        const Text("Align QR code within frame"),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text("Close",
+                            style: TextStyle(color: Colors.black)),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
             const SizedBox(width: 12),
             Container(
@@ -394,7 +424,8 @@ class _HomeScreenState extends State<HomeScreen> {
           color: Color(0xFFFFFFFF), // Pure White BottomSheet
           borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
           boxShadow: [
-            BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, -10))
+            BoxShadow(
+                color: Colors.black12, blurRadius: 20, offset: Offset(0, -10))
           ],
         ),
         child: Column(
@@ -424,7 +455,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 160,
                   height: 160,
                   decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -606,7 +637,9 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: label == 'Add Printer' ? Colors.white : Colors.black, size: 20),
+            Icon(icon,
+                color: label == 'Add Printer' ? Colors.white : Colors.black,
+                size: 20),
             if (label.isNotEmpty) ...[
               const SizedBox(width: 8),
               Flexible(
@@ -688,90 +721,98 @@ class _HomeScreenState extends State<HomeScreen> {
     required Color statusColor,
     required IconData icon,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F7FA), // Light Gray
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE0E0E0),
-          width: 1,
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ReviewSettingsScreen()),
+        );
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F7FA), // Light Gray
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color(0xFFE0E0E0),
+            width: 1,
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE0E0E0),
-              borderRadius: BorderRadius.circular(12),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE0E0E0),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: Colors.black54,
+                size: 28,
+              ),
             ),
-            child: Icon(
-              icon,
-              color: Colors.black54,
-              size: 28,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: GoogleFonts.inter(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  location,
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.black54,
+                  const SizedBox(height: 4),
+                  Text(
+                    location,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.black54,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 10,
-              vertical: 6,
-            ),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: statusColor,
-                    shape: BoxShape.circle,
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: statusColor,
+                      shape: BoxShape.circle,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  status,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: statusColor,
-                    letterSpacing: 0.5,
+                  const SizedBox(width: 6),
+                  Text(
+                    status,
+                    style: GoogleFonts.inter(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: statusColor,
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
-
 }

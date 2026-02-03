@@ -21,14 +21,22 @@ class PrintProApp extends StatelessWidget {
         visualDensity: VisualDensity.compact,
         textTheme: GoogleFonts.interTextTheme(
           const TextTheme(
-            displayLarge: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
-            displayMedium: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
-            displaySmall: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
-            headlineMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
-            titleLarge: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+            displayLarge: TextStyle(
+                fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
+            displayMedium: TextStyle(
+                fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
+            displaySmall: TextStyle(
+                fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+            headlineMedium: TextStyle(
+                fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
+            titleLarge: TextStyle(
+                fontSize: 16, fontWeight: FontWeight.w600, color: Colors.black),
             bodyLarge: TextStyle(fontSize: 14, color: Colors.black),
             bodyMedium: TextStyle(fontSize: 13, color: Colors.black),
-            labelLarge: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.black54),
+            labelLarge: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.black54),
             labelSmall: TextStyle(fontSize: 11, color: Colors.black45),
           ),
         ),

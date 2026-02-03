@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'preview_print_screen.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'dart:async';
+import 'dart:math' as math;
 
 class ReviewSettingsScreen extends StatefulWidget {
   const ReviewSettingsScreen({super.key});
@@ -43,6 +46,167 @@ class _ReviewSettingsScreenState extends State<ReviewSettingsScreen> {
     },
   ];
 
+  late stt.SpeechToText _speechToText;
+  bool _isListening = false;
+  String _lastWords = '';
+  double _soundLevel = 0.0;
+  List<double> _waveHeights = List.generate(5, (index) => 0.2);
+  Timer? _waveTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _speechToText = stt.SpeechToText();
+    _initSpeech();
+  }
+
+  void _initSpeech() async {
+    // Initialize speech engine (safe for web)
+    await _speechToText.initialize(
+      onStatus: (status) => print('onStatus: $status'),
+      onError: (errorNotification) => print('onError: $errorNotification'),
+    );
+  }
+
+  void _startListening() async {
+    bool available = await _speechToText.initialize();
+    if (available) {
+      setState(() {
+        _isListening = true;
+        _lastWords = '';
+        _startWaveAnimation();
+      });
+      _speechToText.listen(
+        onResult: (result) {
+          setState(() {
+            _lastWords = result.recognizedWords;
+          });
+        },
+        listenFor: const Duration(seconds: 30),
+        pauseFor: const Duration(seconds: 5),
+        partialResults: true,
+        cancelOnError: false,
+        listenMode: stt.ListenMode.dictation,
+        localeId: "en-IN", // Indian English
+        onSoundLevelChange: (level) {
+          setState(() {
+            _soundLevel = (level.abs() / 10.0).clamp(0.0, 1.0);
+            if (_soundLevel < 0.2 && level != 0) _soundLevel = 0.3;
+          });
+        },
+      );
+
+      // Show the listening sheet
+      _showListeningSheet();
+    }
+  }
+
+  void _stopListening() {
+    _speechToText.stop();
+    _waveTimer?.cancel();
+    setState(() {
+      _isListening = false;
+    });
+  }
+
+  void _startWaveAnimation() {
+    _waveTimer?.cancel();
+    _waveTimer = Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      if (!_isListening) {
+        timer.cancel();
+        return;
+      }
+      setState(() {
+        for (int i = 0; i < _waveHeights.length; i++) {
+          double baseHeight = 0.2 + (_soundLevel * 0.8);
+          double variation = math.sin(
+                  (DateTime.now().millisecondsSinceEpoch / 80) + (i * 0.5)) *
+              0.3;
+          _waveHeights[i] = (baseHeight + variation).clamp(0.2, 1.0);
+        }
+      });
+    });
+  }
+
+  void _showListeningSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setModalState) {
+          // Use a timer to update the modal state for animation if needed
+          // However, the parent setState drives _waveHeights which we can read here
+          // better to use a dedicated widget or just rely on parent state if simple
+          return Container(
+            padding: const EdgeInsets.all(30),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _isListening ? 'Listening...' : 'Finished',
+                  style: GoogleFonts.inter(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                // Wave Visualization
+                SizedBox(
+                  height: 60,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 100),
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        width: 8,
+                        height: 30 + (_waveHeights[index] * 40),
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  _lastWords.isEmpty
+                      ? "Speak your instructions..."
+                      : '"$_lastWords"',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 30),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    FloatingActionButton(
+                      onPressed: () {
+                        _stopListening();
+                        Navigator.pop(context);
+                      },
+                      backgroundColor: Colors.red,
+                      child: const Icon(Icons.stop, color: Colors.white),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          );
+        });
+      },
+    ).then((_) => _stopListening());
+  }
+
   @override
   Widget build(BuildContext context) {
     // Get screen width for responsive sizing
@@ -50,6 +214,14 @@ class _ReviewSettingsScreenState extends State<ReviewSettingsScreen> {
     bool isSmallScreen = screenWidth < 360;
 
     return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _startListening,
+        backgroundColor: Colors.black,
+        icon: const Icon(Icons.mic, color: Colors.white),
+        label: Text("Voice Assistant",
+            style: GoogleFonts.inter(
+                color: Colors.white, fontWeight: FontWeight.bold)),
+      ),
       backgroundColor: const Color(0xFFFFFFFF), // Pure White Background
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -61,7 +233,8 @@ class _ReviewSettingsScreenState extends State<ReviewSettingsScreen> {
             shape: BoxShape.circle,
           ),
           child: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 16),
+            icon: const Icon(Icons.arrow_back_ios_new,
+                color: Colors.black, size: 16),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -102,7 +275,7 @@ class _ReviewSettingsScreenState extends State<ReviewSettingsScreen> {
               ),
               child: FractionallySizedBox(
                 alignment: Alignment.centerLeft,
-                widthFactor: 4/6,
+                widthFactor: 4 / 6,
                 child: Container(
                   decoration: BoxDecoration(
                     color: const Color(0xFF000000),
@@ -148,7 +321,7 @@ class _ReviewSettingsScreenState extends State<ReviewSettingsScreen> {
                       color: Colors.black54,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 32),
 
                   // Cards List
@@ -208,7 +381,11 @@ class _ReviewSettingsScreenState extends State<ReviewSettingsScreen> {
                           ],
                         ),
                       ),
-                      Container(width: 1, height: 40, color: Colors.black12, margin: const EdgeInsets.symmetric(horizontal: 16)),
+                      Container(
+                          width: 1,
+                          height: 40,
+                          color: Colors.black12,
+                          margin: const EdgeInsets.symmetric(horizontal: 16)),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
@@ -245,10 +422,11 @@ class _ReviewSettingsScreenState extends State<ReviewSettingsScreen> {
                     height: 56,
                     child: ElevatedButton(
                       onPressed: () {
-                         Navigator.push(
-                           context,
-                           MaterialPageRoute(builder: (context) => const PreviewPrintScreen()),
-                         );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const PreviewPrintScreen()),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.black,
@@ -294,7 +472,8 @@ class _ReviewSettingsScreenState extends State<ReviewSettingsScreen> {
         color: const Color(0xFFF5F7FA), // Slightly lighter than bg
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: page['type'] == 'ACTIVE' ? Colors.black : const Color(0xFFE0E0E0),
+          color:
+              page['type'] == 'ACTIVE' ? Colors.black : const Color(0xFFE0E0E0),
           width: 1,
         ),
       ),
@@ -329,7 +508,9 @@ class _ReviewSettingsScreenState extends State<ReviewSettingsScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
-                        color: page['type'] == 'ACTIVE' ? const Color(0xFF000000) : Colors.black38,
+                        color: page['type'] == 'ACTIVE'
+                            ? const Color(0xFF000000)
+                            : Colors.black38,
                         letterSpacing: 1,
                       ),
                     ),
@@ -360,58 +541,56 @@ class _ReviewSettingsScreenState extends State<ReviewSettingsScreen> {
           ),
           const SizedBox(height: 16),
           // Actions
-          LayoutBuilder(
-            builder: (context, constraints) {
-              // If width is tight, column them, else row
-               return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Quantity
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE0E0E0),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Row(
-                        children: [
-                          _buildIconButton(Icons.remove, () {}),
-                          SizedBox(
-                            width: 30,
-                            child: Text(
-                              quantity.toString(),
-                              textAlign: TextAlign.center,
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
+          LayoutBuilder(builder: (context, constraints) {
+            // If width is tight, column them, else row
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Quantity
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0E0E0),
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Row(
+                    children: [
+                      _buildIconButton(Icons.remove, () {}),
+                      SizedBox(
+                        width: 30,
+                        child: Text(
+                          quantity.toString(),
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
                           ),
-                          _buildIconButton(Icons.add, () {}),
-                        ],
-                      ),
-                    ),
-                    // Toggle
-                    Flexible(
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min, // Shrink to fit
-                          children: [
-                            Flexible(child: _buildToggleButton('B&W', !isColor)),
-                            Flexible(child: _buildToggleButton('COLOR', isColor)),
-                          ],
                         ),
                       ),
+                      _buildIconButton(Icons.add, () {}),
+                    ],
+                  ),
+                ),
+                // Toggle
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(30),
                     ),
-                  ],
-                );
-            }
-          ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min, // Shrink to fit
+                      children: [
+                        Flexible(child: _buildToggleButton('B&W', !isColor)),
+                        Flexible(child: _buildToggleButton('COLOR', isColor)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }),
         ],
       ),
     );
